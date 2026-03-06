@@ -268,7 +268,7 @@ local function cleanupFly()
 	if flyKeyUpConn then flyKeyUpConn:Disconnect() flyKeyUpConn = nil end
 	if flyGyro then flyGyro:Destroy() flyGyro = nil end
 	if flyCore then flyCore:Destroy() flyCore = nil end
-flyKeys = { W = false, S = false, A = false, D = false, Up = false, Down = false }
+	flyKeys = { W = false, S = false, A = false, D = false }
 	local hum = getHumanoid()
 	if hum and hum.Parent then hum.PlatformStand = false end
 	flyRunning = false
@@ -311,12 +311,11 @@ local function flyStep()
 	if flyKeys.S then move -= camera.CFrame.LookVector end
 	if flyKeys.D then move += camera.CFrame.RightVector end
 	if flyKeys.A then move -= camera.CFrame.RightVector end
-	if flyKeys.Up then move += Vector3.new(0, 1, 0) end
-	if flyKeys.Down then move += Vector3.new(0, -1, 0) end
 	local moveDir = move.Magnitude > 0 and move.Unit or Vector3.zero
 	local speed = flySpeedValue
 
-	local targetVel = moveDir * speed
+	-- keep Y neutral to prevent gravity drift
+	local targetVel = Vector3.new(moveDir.X * speed, 0, moveDir.Z * speed)
 	local vel = flyCore:FindFirstChild("FlyVelLocal")
 	if vel and vel:IsA("BodyVelocity") then
 		vel.Velocity = targetVel
@@ -350,13 +349,11 @@ local function startFly()
 	hum.PlatformStand = true
 	flyRunning = true
 
-	-- seed key state so holding W/A/S/D/Space/Shift before enabling fly works immediately
+	-- seed key state so holding W/A/S/D before enabling fly works immediately
 	flyKeys.W = UserInputService:IsKeyDown(Enum.KeyCode.W)
 	flyKeys.S = UserInputService:IsKeyDown(Enum.KeyCode.S)
 	flyKeys.A = UserInputService:IsKeyDown(Enum.KeyCode.A)
 	flyKeys.D = UserInputService:IsKeyDown(Enum.KeyCode.D)
-	flyKeys.Up = UserInputService:IsKeyDown(Enum.KeyCode.Space)
-	flyKeys.Down = UserInputService:IsKeyDown(Enum.KeyCode.LeftShift) or UserInputService:IsKeyDown(Enum.KeyCode.LeftControl)
 
 	flyKeyDownConn = UserInputService.InputBegan:Connect(function(input, gpe)
 		if gpe then return end
@@ -365,8 +362,6 @@ local function startFly()
 			if input.KeyCode == Enum.KeyCode.S then flyKeys.S = true end
 			if input.KeyCode == Enum.KeyCode.A then flyKeys.A = true end
 			if input.KeyCode == Enum.KeyCode.D then flyKeys.D = true end
-			if input.KeyCode == Enum.KeyCode.Space then flyKeys.Up = true end
-			if input.KeyCode == Enum.KeyCode.LeftShift or input.KeyCode == Enum.KeyCode.LeftControl then flyKeys.Down = true end
 		end
 	end)
 	flyKeyUpConn = UserInputService.InputEnded:Connect(function(input)
@@ -375,8 +370,6 @@ local function startFly()
 			if input.KeyCode == Enum.KeyCode.S then flyKeys.S = false end
 			if input.KeyCode == Enum.KeyCode.A then flyKeys.A = false end
 			if input.KeyCode == Enum.KeyCode.D then flyKeys.D = false end
-			if input.KeyCode == Enum.KeyCode.Space then flyKeys.Up = false end
-			if input.KeyCode == Enum.KeyCode.LeftShift or input.KeyCode == Enum.KeyCode.LeftControl then flyKeys.Down = false end
 		end
 	end)
 
@@ -1696,17 +1689,12 @@ local waitingFor: string? = nil
 local espRebindBtn = makePillButton(pageMain, ("Rebind ESP: %s"):format(bindToString(espBind)), 414)
 local aimRebindBtn = makePillButton(pageMain, ("Rebind Aim: %s"):format(bindToString(aimBind)), 450)
 local noclipRebindBtn = makePillButton(pageMain, ("Rebind Noclip: %s"):format(bindToString(noclipBind)), 486)
-local walkRebindBtn = makePillButton(pageMain, ("Rebind Walk: %s"):format(bindToString(walkBind)), 522)
-local flyRebindBtn = makePillButton(pageMain, ("Rebind Fly: %s"):format(bindToString(flyBind)), 558)
-local fullBrightBtn = makePillButton(pageMain, "Full Bright: OFF", 594)
 
 local function stopRebind()
 	waitingFor = nil
 	espRebindBtn.Text = ("Rebind ESP: %s"):format(bindToString(espBind))
 	aimRebindBtn.Text = ("Rebind Aim: %s"):format(bindToString(aimBind))
 	noclipRebindBtn.Text = ("Rebind Noclip: %s"):format(bindToString(noclipBind))
-	walkRebindBtn.Text = ("Rebind Walk: %s"):format(bindToString(walkBind))
-	flyRebindBtn.Text = ("Rebind Fly: %s"):format(bindToString(flyBind))
 end
 
 espRebindBtn.MouseButton1Click:Connect(function()
@@ -1730,77 +1718,6 @@ noclipRebindBtn.MouseButton1Click:Connect(function()
 	aimRebindBtn.Text = ("Rebind Aim: %s"):format(bindToString(aimBind))
 end)
 
-walkRebindBtn.MouseButton1Click:Connect(function()
-	waitingFor = "WALK"
-	walkRebindBtn.Text = "Press a key / mouse..."
-	espRebindBtn.Text = ("Rebind ESP: %s"):format(bindToString(espBind))
-	aimRebindBtn.Text = ("Rebind Aim: %s"):format(bindToString(aimBind))
-	noclipRebindBtn.Text = ("Rebind Noclip: %s"):format(bindToString(noclipBind))
-	flyRebindBtn.Text = ("Rebind Fly: %s"):format(bindToString(flyBind))
-end)
-
-flyRebindBtn.MouseButton1Click:Connect(function()
-	waitingFor = "FLY"
-	flyRebindBtn.Text = "Press a key / mouse..."
-	espRebindBtn.Text = ("Rebind ESP: %s"):format(bindToString(espBind))
-	aimRebindBtn.Text = ("Rebind Aim: %s"):format(bindToString(aimBind))
-	noclipRebindBtn.Text = ("Rebind Noclip: %s"):format(bindToString(noclipBind))
-	walkRebindBtn.Text = ("Rebind Walk: %s"):format(bindToString(walkBind))
-end)
-
-fullBrightBtn.MouseButton1Click:Connect(function()
-	local state = getgenv()._fullBrightState or { enabled = false }
-	local L = game:GetService("Lighting")
-
-	if not state.saved then
-		state.saved = {
-			Brightness = L.Brightness,
-			Ambient = L.Ambient,
-			OutdoorAmbient = L.OutdoorAmbient,
-			ClockTime = L.ClockTime,
-			FogEnd = L.FogEnd,
-			FogStart = L.FogStart,
-			ColorShift_Bottom = L.ColorShift_Bottom,
-			ColorShift_Top = L.ColorShift_Top,
-			GlobalShadows = L.GlobalShadows,
-		}
-	end
-
-	state.enabled = not state.enabled
-
-	if state.enabled then
-		L.Brightness = 3
-		L.ClockTime = 12
-		L.FogEnd = 1e6
-		L.FogStart = 0
-		L.GlobalShadows = false
-		L.Ambient = Color3.fromRGB(255, 255, 255)
-		L.OutdoorAmbient = Color3.fromRGB(255, 255, 255)
-		L.ColorShift_Bottom = Color3.new()
-		L.ColorShift_Top = Color3.new()
-		fullBrightBtn.Text = "Full Bright: ON"
-	else
-		local s = state.saved
-		if s then
-			pcall(function()
-				L.Brightness = s.Brightness
-				L.Ambient = s.Ambient
-				L.OutdoorAmbient = s.OutdoorAmbient
-				L.ClockTime = s.ClockTime
-				L.FogEnd = s.FogEnd
-				L.FogStart = s.FogStart
-				L.ColorShift_Bottom = s.ColorShift_Bottom
-				L.ColorShift_Top = s.ColorShift_Top
-				L.GlobalShadows = s.GlobalShadows
-			end)
-		end
-		fullBrightBtn.Text = "Full Bright: OFF"
-	end
-
-	getgenv()._fullBrightState = state
-	pulseUI()
-end)
-
 -- allow MouseButton1 (Left Click) to be bound normally
 UserInputService.InputBegan:Connect(function(input, gp)
 	if gp then return end
@@ -1822,8 +1739,6 @@ UserInputService.InputBegan:Connect(function(input, gp)
 	if waitingFor == "ESP" then espBind = newBind end
 	if waitingFor == "AIM" then aimBind = newBind end
 	if waitingFor == "NOCLIP" then noclipBind = newBind end
-	if waitingFor == "WALK" then walkBind = newBind end
-	if waitingFor == "FLY" then flyBind = newBind end
 	stopRebind()
 end)
 
@@ -2398,30 +2313,6 @@ UserInputService.InputBegan:Connect(function(input, gp)
 		if not noclipArmed then return end
 		setNoclipState(not noclipEnabled)
 		pulseUI()
-		return
-	end
-
-	if matchesBind(input, walkBind) then
-		walkSpeedEnabled = not walkSpeedEnabled
-		getgenv().walkSpeedSettings.WalkSpeed.Enabled = walkSpeedEnabled
-		if walkSpeedEnabledCtl then walkSpeedEnabledCtl.setOn(walkSpeedEnabled) end
-		if walkSpeedEnabled then
-			if flyEnabled then
-				flyEnabled = false
-				if flyEnabledCtl then flyEnabledCtl.setOn(false) end
-				stopFly()
-			end
-			applyWalkSpeed()
-		else
-			applyWalkSpeed()
-		end
-		pulseUI()
-		return
-	end
-
-	if matchesBind(input, flyBind) then
-		pulseUI()
-		toggleFly()
 		return
 	end
 end)
