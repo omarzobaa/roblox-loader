@@ -2257,26 +2257,22 @@ minimizeBtn.MouseButton1Click:Connect(function()
 	setMinimized(true)
 end)
 
-do
-	local downPos: Vector2? = nil
-	local CLICK_MOVE_THRESHOLD = 6
+mini.InputBegan:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 then
+		mini:SetAttribute("DownPos", input.Position)
+	end
+end)
 
-	mini.InputBegan:Connect(function(input)
-		if input.UserInputType == Enum.UserInputType.MouseButton1 then
-			downPos = input.Position
-		end
-	end)
-
-	mini.InputEnded:Connect(function(input)
-		if input.UserInputType ~= Enum.UserInputType.MouseButton1 then return end
-		if not downPos then return end
-		local moved = (input.Position - downPos).Magnitude
-		downPos = nil
-		if moved <= CLICK_MOVE_THRESHOLD then
-			setMinimized(false)
-		end
-	end)
-end
+mini.InputEnded:Connect(function(input)
+	if input.UserInputType ~= Enum.UserInputType.MouseButton1 then return end
+	local downPos = mini:GetAttribute("DownPos")
+	mini:SetAttribute("DownPos", nil)
+	if not downPos then return end
+	local moved = (input.Position - downPos).Magnitude
+	if moved <= 6 then
+		setMinimized(false)
+	end
+end)
 
 -- =========================
 -- BIND MATCH
