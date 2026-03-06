@@ -4,12 +4,10 @@ local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
 local PhysicsService = game:GetService("PhysicsService")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TeleportService = game:GetService("TeleportService")
 local StarterGui = game:GetService("StarterGui")
 local Workspace = game:GetService("Workspace")
 local Camera = Workspace.CurrentCamera
-local Lighting = game:GetService("Lighting")
 
 -- =========================
 -- UI SCALE (smaller menu)
@@ -113,22 +111,7 @@ local flyVel: BodyVelocity? = nil
 local flyKeyDownConn: RBXScriptConnection? = nil
 local flyKeyUpConn: RBXScriptConnection? = nil
 local flyLoopConn: RBXScriptConnection? = nil
-local fullBrightEnabled = false
-local fullBrightLoopConn: RBXScriptConnection? = nil
-local savedLighting: {
-	Brightness: number,
-	Ambient: Color3,
-	OutdoorAmbient: Color3,
-	ClockTime: number,
-	FogEnd: number,
-	FogStart: number,
-	ColorShift_Bottom: Color3,
-	ColorShift_Top: Color3,
-	GlobalShadows: boolean,
-}? = nil
-local hiddenFling = false
-local flingNudge = 0.1
-local lastFlingVel = Vector3.zero
+local fling = { enabled = false, nudge = 0.1, lastVel = Vector3.zero }
 
 getgenv().walkSpeedSettings = getgenv().walkSpeedSettings or {
 	WalkSpeed = {
@@ -145,10 +128,13 @@ walkSpeedValue = 50
 flySpeedValue = 50
 getgenv().walkSpeedSettings.WalkSpeed.Speed = walkSpeedValue
 
-if not ReplicatedStorage:FindFirstChild("juisdfj0i32i0eidsuf0iok") then
-	local detection = Instance.new("Decal")
-	detection.Name = "juisdfj0i32i0eidsuf0iok"
-	detection.Parent = ReplicatedStorage
+do
+	local rep = game:GetService("ReplicatedStorage")
+	if not rep:FindFirstChild("juisdfj0i32i0eidsuf0iok") then
+		local detection = Instance.new("Decal")
+		detection.Name = "juisdfj0i32i0eidsuf0iok"
+		detection.Parent = rep
+	end
 end
 
 -- =========================
@@ -282,70 +268,6 @@ local function applyInstantWalkVelocity()
 		return
 	end
 	rootPart.AssemblyLinearVelocity = Vector3.new(moveDir.X * walkSpeedValue, currentVel.Y, moveDir.Z * walkSpeedValue)
-end
-
--- =========================
--- FULL BRIGHT
--- =========================
-local function applyFullBright()
-	if not savedLighting then
-		savedLighting = {
-			Brightness = Lighting.Brightness,
-			Ambient = Lighting.Ambient,
-			OutdoorAmbient = Lighting.OutdoorAmbient,
-			ClockTime = Lighting.ClockTime,
-			FogEnd = Lighting.FogEnd,
-			FogStart = Lighting.FogStart,
-			ColorShift_Bottom = Lighting.ColorShift_Bottom,
-			ColorShift_Top = Lighting.ColorShift_Top,
-			GlobalShadows = Lighting.GlobalShadows,
-		}
-	end
-	Lighting.Brightness = 3
-	Lighting.ClockTime = 12
-	Lighting.FogEnd = 1e6
-	Lighting.FogStart = 0
-	Lighting.GlobalShadows = false
-	Lighting.Ambient = Color3.fromRGB(255, 255, 255)
-	Lighting.OutdoorAmbient = Color3.fromRGB(255, 255, 255)
-	Lighting.ColorShift_Bottom = Color3.new()
-	Lighting.ColorShift_Top = Color3.new()
-end
-
-local function restoreLighting()
-	if not savedLighting then return end
-	pcall(function()
-		Lighting.Brightness = savedLighting.Brightness
-		Lighting.Ambient = savedLighting.Ambient
-		Lighting.OutdoorAmbient = savedLighting.OutdoorAmbient
-		Lighting.ClockTime = savedLighting.ClockTime
-		Lighting.FogEnd = savedLighting.FogEnd
-		Lighting.FogStart = savedLighting.FogStart
-		Lighting.ColorShift_Bottom = savedLighting.ColorShift_Bottom
-		Lighting.ColorShift_Top = savedLighting.ColorShift_Top
-		Lighting.GlobalShadows = savedLighting.GlobalShadows
-	end)
-	savedLighting = nil
-end
-
-local function setFullBright(state: boolean)
-	fullBrightEnabled = state
-	if state then
-		applyFullBright()
-		if not fullBrightLoopConn then
-			fullBrightLoopConn = RunService.RenderStepped:Connect(function()
-				if fullBrightEnabled then
-					applyFullBright()
-				end
-			end)
-		end
-	else
-		if fullBrightLoopConn then
-			fullBrightLoopConn:Disconnect()
-			fullBrightLoopConn = nil
-		end
-		restoreLighting()
-	end
 end
 
 -- =========================
@@ -1805,9 +1727,9 @@ noclipRebindBtn.MouseButton1Click:Connect(function()
 end)
 
 flingBtn.MouseButton1Click:Connect(function()
-	hiddenFling = not hiddenFling
-	flingBtn.Text = hiddenFling and "Fling: ON" or "Fling: OFF"
-	if not hiddenFling then
+	fling.enabled = not fling.enabled
+	flingBtn.Text = fling.enabled and "Fling: ON" or "Fling: OFF"
+	if not fling.enabled then
 		local c = LocalPlayer.Character
 		local hrp = c and (c:FindFirstChild("HumanoidRootPart") or c:FindFirstChild("LowerTorso"))
 		if hrp then
@@ -2448,11 +2370,11 @@ RunService.RenderStepped:Connect(function(dt)
 	end
 
 	-- (matrix background removed)
-	if hiddenFling then
+	if fling.enabled then
 		local c = LocalPlayer.Character
 		local hrp = c and (c:FindFirstChild("HumanoidRootPart") or c:FindFirstChild("LowerTorso"))
 		if hrp then
-			hrp.Velocity = lastFlingVel
+			hrp.Velocity = fling.lastVel
 		end
 	end
 
@@ -2505,12 +2427,12 @@ RunService.RenderStepped:Connect(function(dt)
 end)
 
 RunService.Heartbeat:Connect(function()
-	if hiddenFling then
+	if fling.enabled then
 		local c = LocalPlayer.Character
 		local hrp = c and (c:FindFirstChild("HumanoidRootPart") or c:FindFirstChild("LowerTorso"))
 		if hrp then
-			lastFlingVel = hrp.Velocity
-			hrp.Velocity = lastFlingVel * 10000 + Vector3.new(0, 10000, 0)
+			fling.lastVel = hrp.Velocity
+			hrp.Velocity = fling.lastVel * 10000 + Vector3.new(0, 10000, 0)
 		end
 	end
 
@@ -2524,12 +2446,12 @@ RunService.Heartbeat:Connect(function()
 end)
 
 RunService.Stepped:Connect(function()
-	if not hiddenFling then return end
+	if not fling.enabled then return end
 	local c = LocalPlayer.Character
 	local hrp = c and (c:FindFirstChild("HumanoidRootPart") or c:FindFirstChild("LowerTorso"))
 	if not hrp then return end
-	hrp.Velocity = lastFlingVel + Vector3.new(0, flingNudge, 0)
-	flingNudge = -flingNudge
+	hrp.Velocity = fling.lastVel + Vector3.new(0, fling.nudge, 0)
+	fling.nudge = -fling.nudge
 end)
 
 -- =========================
