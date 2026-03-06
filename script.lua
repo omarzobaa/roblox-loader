@@ -12,27 +12,27 @@ local Camera = Workspace.CurrentCamera
 -- =========================
 -- UI SCALE (smaller menu)
 -- =========================
-local UI_SCALE = 0.75
+UI_SCALE = 0.75
 local function S(n: number): number
 	return math.max(1, math.floor(n * UI_SCALE + 0.5))
 end
-local CONTENT_INSET_X = S(4)
-local FULL_WIDTH_INSET = S(4)
-local BUTTON_HEIGHT = S(26)
-local SWITCH_WIDTH = S(52)
-local SWITCH_GAP = S(6)
-local SWITCH_HEIGHT = BUTTON_HEIGHT
-local SWITCH_PADDING = S(3)
-local SWITCH_KNOB_SIZE = SWITCH_HEIGHT - (SWITCH_PADDING * 2)
-local SLIDER_TRACK_HEIGHT = S(6)
-local SLIDER_KNOB_SIZE = S(18)
-local SLIDER_X_OFFSET = S(96)
-local SLIDER_WIDTH_INSET = S(112)
-local SLIDER_GLOW_THICKNESS = 1.25
-local TAB_BAR_HEIGHT = S(28)
-local TAB_BAR_GAP = S(6)
-local TAB_BUTTON_PADDING = S(6)
-local MAIN_PAGE_SCROLL_PAD = S(20)
+CONTENT_INSET_X = S(4)
+FULL_WIDTH_INSET = S(4)
+BUTTON_HEIGHT = S(26)
+SWITCH_WIDTH = S(52)
+SWITCH_GAP = S(6)
+SWITCH_HEIGHT = BUTTON_HEIGHT
+SWITCH_PADDING = S(3)
+SWITCH_KNOB_SIZE = SWITCH_HEIGHT - (SWITCH_PADDING * 2)
+SLIDER_TRACK_HEIGHT = S(6)
+SLIDER_KNOB_SIZE = S(18)
+SLIDER_X_OFFSET = S(96)
+SLIDER_WIDTH_INSET = S(112)
+SLIDER_GLOW_THICKNESS = 1.25
+TAB_BAR_HEIGHT = S(28)
+TAB_BAR_GAP = S(6)
+TAB_BUTTON_PADDING = S(6)
+MAIN_PAGE_SCROLL_PAD = S(20)
 
 -- =========================
 -- DEFAULT BINDS (can rebind in GUI)
@@ -46,44 +46,44 @@ local flyBind = { kind = "KeyCode", value = Enum.KeyCode.F }
 -- =========================
 -- ESP SETTINGS
 -- =========================
-local RAINBOW_SPEED = 0.35
-local HIGHLIGHT_OUTLINE = Color3.fromRGB(255, 255, 255)
-local HIGHLIGHT_FILL_TRANSPARENCY = 0.5
-local HIGHLIGHT_NAME = "AnomalyESP_Highlight"
+RAINBOW_SPEED = 0.35
+HIGHLIGHT_OUTLINE = Color3.fromRGB(255, 255, 255)
+HIGHLIGHT_FILL_TRANSPARENCY = 0.5
+HIGHLIGHT_NAME = "AnomalyESP_Highlight"
 
 -- =========================
 -- AIM SETTINGS
 -- =========================
-local MAX_RAY_DISTANCE = 1000
-local MAX_SNAP_TO_RAY = 8
+MAX_RAY_DISTANCE = 1000
+MAX_SNAP_TO_RAY = 8
 
 -- =========================
 -- WALK SPEED SETTINGS
 -- =========================
-local WALK_SPEED_SLIDER_MAX = 1000
-local WALK_SPEED_INPUT_MAX = 100000000000000000
-local FLY_SPEED_SLIDER_MAX = 1000
-local FLY_SPEED_INPUT_MAX = 100000000000000000
+WALK_SPEED_SLIDER_MAX = 1000
+WALK_SPEED_INPUT_MAX = 100000000000000000
+FLY_SPEED_SLIDER_MAX = 1000
+FLY_SPEED_INPUT_MAX = 100000000000000000
 
 -- =========================
 -- LASER VISUAL
 -- =========================
-local LASER_WIDTH_0 = 0.08
-local LASER_WIDTH_1 = 0.08
-local LASER_TRANSPARENCY = 0.15
+LASER_WIDTH_0 = 0.08
+LASER_WIDTH_1 = 0.08
+LASER_TRANSPARENCY = 0.15
 
 -- =========================
 -- UI COLORS
 -- =========================
-local SWITCH_OFF = Color3.fromRGB(85, 85, 95)
-local REBIND_BG_IDLE = Color3.fromRGB(26, 26, 32)
-local REBIND_BG_HOVER = Color3.fromRGB(36, 36, 46)
-local REBIND_BG_DOWN  = Color3.fromRGB(44, 44, 58)
-local TAB_ACTIVE_BG = Color3.fromRGB(30, 30, 38)
-local TAB_INACTIVE_TEXT = Color3.fromRGB(180, 180, 200)
-local OUTLINE_THIN = 0.75
-local OUTLINE_THIN_ACTIVE = 1.5
-local EDGE_GUARD = S(1) -- unused guard; kept for potential future spacing tweaks
+SWITCH_OFF = Color3.fromRGB(85, 85, 95)
+REBIND_BG_IDLE = Color3.fromRGB(26, 26, 32)
+REBIND_BG_HOVER = Color3.fromRGB(36, 36, 46)
+REBIND_BG_DOWN  = Color3.fromRGB(44, 44, 58)
+TAB_ACTIVE_BG = Color3.fromRGB(30, 30, 38)
+TAB_INACTIVE_TEXT = Color3.fromRGB(180, 180, 200)
+OUTLINE_THIN = 0.75
+OUTLINE_THIN_ACTIVE = 1.5
+EDGE_GUARD = S(1) -- unused guard; kept for potential future spacing tweaks
 
 -- =========================
 -- STATE
@@ -293,7 +293,6 @@ local function ensureFlyCore(): Part?
 	weld.C0 = CFrame.new()
 	weld.Parent = core
 
-	-- counter gravity / movement velocity holder
 	local vel = Instance.new("BodyVelocity")
 	vel.Name = "FlyVelLocal"
 	vel.MaxForce = Vector3.new(9e9, 9e9, 9e9)
@@ -350,7 +349,7 @@ local function startFly()
 	hum.PlatformStand = true
 	flyRunning = true
 
-	-- seed key state so holding W/A/S/D/Space/Shift before enabling fly works immediately
+	-- seed key state so holding W/A/S/D before enabling fly works immediately
 	flyKeys.W = UserInputService:IsKeyDown(Enum.KeyCode.W)
 	flyKeys.S = UserInputService:IsKeyDown(Enum.KeyCode.S)
 	flyKeys.A = UserInputService:IsKeyDown(Enum.KeyCode.A)
@@ -1698,7 +1697,6 @@ local aimRebindBtn = makePillButton(pageMain, ("Rebind Aim: %s"):format(bindToSt
 local noclipRebindBtn = makePillButton(pageMain, ("Rebind Noclip: %s"):format(bindToString(noclipBind)), 486)
 local walkRebindBtn = makePillButton(pageMain, ("Rebind Walk: %s"):format(bindToString(walkBind)), 522)
 local flyRebindBtn = makePillButton(pageMain, ("Rebind Fly: %s"):format(bindToString(flyBind)), 558)
-local fullBrightBtn = makePillButton(pageMain, "Full Bright: OFF", 594)
 
 local function stopRebind()
 	waitingFor = nil
@@ -1746,59 +1744,6 @@ flyRebindBtn.MouseButton1Click:Connect(function()
 	aimRebindBtn.Text = ("Rebind Aim: %s"):format(bindToString(aimBind))
 	noclipRebindBtn.Text = ("Rebind Noclip: %s"):format(bindToString(noclipBind))
 	walkRebindBtn.Text = ("Rebind Walk: %s"):format(bindToString(walkBind))
-end)
-
-fullBrightBtn.MouseButton1Click:Connect(function()
-	local state = getgenv()._fullBrightState or { enabled = false }
-	local L = game:GetService("Lighting")
-
-	if not state.saved then
-		state.saved = {
-			Brightness = L.Brightness,
-			Ambient = L.Ambient,
-			OutdoorAmbient = L.OutdoorAmbient,
-			ClockTime = L.ClockTime,
-			FogEnd = L.FogEnd,
-			FogStart = L.FogStart,
-			ColorShift_Bottom = L.ColorShift_Bottom,
-			ColorShift_Top = L.ColorShift_Top,
-			GlobalShadows = L.GlobalShadows,
-		}
-	end
-
-	state.enabled = not state.enabled
-
-	if state.enabled then
-		L.Brightness = 3
-		L.ClockTime = 12
-		L.FogEnd = 1e6
-		L.FogStart = 0
-		L.GlobalShadows = false
-		L.Ambient = Color3.fromRGB(255, 255, 255)
-		L.OutdoorAmbient = Color3.fromRGB(255, 255, 255)
-		L.ColorShift_Bottom = Color3.new()
-		L.ColorShift_Top = Color3.new()
-		fullBrightBtn.Text = "Full Bright: ON"
-	else
-		local s = state.saved
-		if s then
-			pcall(function()
-				L.Brightness = s.Brightness
-				L.Ambient = s.Ambient
-				L.OutdoorAmbient = s.OutdoorAmbient
-				L.ClockTime = s.ClockTime
-				L.FogEnd = s.FogEnd
-				L.FogStart = s.FogStart
-				L.ColorShift_Bottom = s.ColorShift_Bottom
-				L.ColorShift_Top = s.ColorShift_Top
-				L.GlobalShadows = s.GlobalShadows
-			end)
-		end
-		fullBrightBtn.Text = "Full Bright: OFF"
-	end
-
-	getgenv()._fullBrightState = state
-	pulseUI()
 end)
 
 -- allow MouseButton1 (Left Click) to be bound normally
