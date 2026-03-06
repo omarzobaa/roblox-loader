@@ -1698,6 +1698,7 @@ local aimRebindBtn = makePillButton(pageMain, ("Rebind Aim: %s"):format(bindToSt
 local noclipRebindBtn = makePillButton(pageMain, ("Rebind Noclip: %s"):format(bindToString(noclipBind)), 486)
 local walkRebindBtn = makePillButton(pageMain, ("Rebind Walk: %s"):format(bindToString(walkBind)), 522)
 local flyRebindBtn = makePillButton(pageMain, ("Rebind Fly: %s"):format(bindToString(flyBind)), 558)
+local fullBrightBtn = makePillButton(pageMain, "Full Bright: OFF", 594)
 
 local function stopRebind()
 	waitingFor = nil
@@ -1745,6 +1746,59 @@ flyRebindBtn.MouseButton1Click:Connect(function()
 	aimRebindBtn.Text = ("Rebind Aim: %s"):format(bindToString(aimBind))
 	noclipRebindBtn.Text = ("Rebind Noclip: %s"):format(bindToString(noclipBind))
 	walkRebindBtn.Text = ("Rebind Walk: %s"):format(bindToString(walkBind))
+end)
+
+fullBrightBtn.MouseButton1Click:Connect(function()
+	local state = getgenv()._fullBrightState or { enabled = false }
+	local L = game:GetService("Lighting")
+
+	if not state.saved then
+		state.saved = {
+			Brightness = L.Brightness,
+			Ambient = L.Ambient,
+			OutdoorAmbient = L.OutdoorAmbient,
+			ClockTime = L.ClockTime,
+			FogEnd = L.FogEnd,
+			FogStart = L.FogStart,
+			ColorShift_Bottom = L.ColorShift_Bottom,
+			ColorShift_Top = L.ColorShift_Top,
+			GlobalShadows = L.GlobalShadows,
+		}
+	end
+
+	state.enabled = not state.enabled
+
+	if state.enabled then
+		L.Brightness = 3
+		L.ClockTime = 12
+		L.FogEnd = 1e6
+		L.FogStart = 0
+		L.GlobalShadows = false
+		L.Ambient = Color3.fromRGB(255, 255, 255)
+		L.OutdoorAmbient = Color3.fromRGB(255, 255, 255)
+		L.ColorShift_Bottom = Color3.new()
+		L.ColorShift_Top = Color3.new()
+		fullBrightBtn.Text = "Full Bright: ON"
+	else
+		local s = state.saved
+		if s then
+			pcall(function()
+				L.Brightness = s.Brightness
+				L.Ambient = s.Ambient
+				L.OutdoorAmbient = s.OutdoorAmbient
+				L.ClockTime = s.ClockTime
+				L.FogEnd = s.FogEnd
+				L.FogStart = s.FogStart
+				L.ColorShift_Bottom = s.ColorShift_Bottom
+				L.ColorShift_Top = s.ColorShift_Top
+				L.GlobalShadows = s.GlobalShadows
+			end)
+		end
+		fullBrightBtn.Text = "Full Bright: OFF"
+	end
+
+	getgenv()._fullBrightState = state
+	pulseUI()
 end)
 
 -- allow MouseButton1 (Left Click) to be bound normally
