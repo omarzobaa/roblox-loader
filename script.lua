@@ -107,6 +107,7 @@ local flyRunning = false
 local flyKeys = { W = false, S = false, A = false, D = false }
 local flyCore: Part? = nil
 local flyGyro: BodyGyro? = nil
+local flyVel: BodyVelocity? = nil
 local flyKeyDownConn: RBXScriptConnection? = nil
 local flyKeyUpConn: RBXScriptConnection? = nil
 local flyLoopConn: RBXScriptConnection? = nil
@@ -267,6 +268,7 @@ local function cleanupFly()
 	if flyKeyDownConn then flyKeyDownConn:Disconnect() flyKeyDownConn = nil end
 	if flyKeyUpConn then flyKeyUpConn:Disconnect() flyKeyUpConn = nil end
 	if flyGyro then flyGyro:Destroy() flyGyro = nil end
+	if flyVel then flyVel:Destroy() flyVel = nil end
 	if flyCore then flyCore:Destroy() flyCore = nil end
 	flyKeys = { W = false, S = false, A = false, D = false }
 	local hum = getHumanoid()
@@ -306,7 +308,11 @@ local function flyStep()
 	if flyKeys.A then move -= camera.CFrame.RightVector end
 	local moveDir = move.Magnitude > 0 and move.Unit or Vector3.zero
 	local speed = flySpeedValue
-	flyCore.AssemblyLinearVelocity = moveDir * speed
+	if flyVel then
+		flyVel.Velocity = moveDir * speed
+	else
+		flyCore.AssemblyLinearVelocity = moveDir * speed
+	end
 	flyGyro.CFrame = CFrame.new(flyCore.Position, flyCore.Position + camera.CFrame.LookVector)
 end
 
@@ -330,6 +336,12 @@ local function startFly()
 	flyGyro.MaxTorque = Vector3.new(9e9, 9e9, 9e9)
 	flyGyro.CFrame = core.CFrame
 	flyGyro.Parent = core
+
+	flyVel = Instance.new("BodyVelocity")
+	flyVel.Name = "FlyVelocityLocal"
+	flyVel.MaxForce = Vector3.new(9e9, 9e9, 9e9)
+	flyVel.Velocity = Vector3.zero
+	flyVel.Parent = core
 
 	hum.PlatformStand = true
 	flyRunning = true
