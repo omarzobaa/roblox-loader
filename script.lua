@@ -8,6 +8,7 @@ local TeleportService = game:GetService("TeleportService")
 local StarterGui = game:GetService("StarterGui")
 local Workspace = game:GetService("Workspace")
 local Camera = Workspace.CurrentCamera
+local Lighting = game:GetService("Lighting")
 
 -- =========================
 -- UI SCALE (smaller menu)
@@ -111,6 +112,19 @@ local flyVel: BodyVelocity? = nil
 local flyKeyDownConn: RBXScriptConnection? = nil
 local flyKeyUpConn: RBXScriptConnection? = nil
 local flyLoopConn: RBXScriptConnection? = nil
+local fullBrightEnabled = false
+local fullBrightLoopConn: RBXScriptConnection? = nil
+local savedLighting: {
+	Brightness: number,
+	Ambient: Color3,
+	OutdoorAmbient: Color3,
+	ClockTime: number,
+	FogEnd: number,
+	FogStart: number,
+	ColorShift_Bottom: Color3,
+	ColorShift_Top: Color3,
+	GlobalShadows: boolean,
+}? = nil
 
 getgenv().walkSpeedSettings = getgenv().walkSpeedSettings or {
 	WalkSpeed = {
@@ -258,6 +272,70 @@ local function applyInstantWalkVelocity()
 		return
 	end
 	rootPart.AssemblyLinearVelocity = Vector3.new(moveDir.X * walkSpeedValue, currentVel.Y, moveDir.Z * walkSpeedValue)
+end
+
+-- =========================
+-- FULL BRIGHT
+-- =========================
+local function applyFullBright()
+	if not savedLighting then
+		savedLighting = {
+			Brightness = Lighting.Brightness,
+			Ambient = Lighting.Ambient,
+			OutdoorAmbient = Lighting.OutdoorAmbient,
+			ClockTime = Lighting.ClockTime,
+			FogEnd = Lighting.FogEnd,
+			FogStart = Lighting.FogStart,
+			ColorShift_Bottom = Lighting.ColorShift_Bottom,
+			ColorShift_Top = Lighting.ColorShift_Top,
+			GlobalShadows = Lighting.GlobalShadows,
+		}
+	end
+	Lighting.Brightness = 3
+	Lighting.ClockTime = 12
+	Lighting.FogEnd = 1e6
+	Lighting.FogStart = 0
+	Lighting.GlobalShadows = false
+	Lighting.Ambient = Color3.fromRGB(255, 255, 255)
+	Lighting.OutdoorAmbient = Color3.fromRGB(255, 255, 255)
+	Lighting.ColorShift_Bottom = Color3.new()
+	Lighting.ColorShift_Top = Color3.new()
+end
+
+local function restoreLighting()
+	if not savedLighting then return end
+	pcall(function()
+		Lighting.Brightness = savedLighting.Brightness
+		Lighting.Ambient = savedLighting.Ambient
+		Lighting.OutdoorAmbient = savedLighting.OutdoorAmbient
+		Lighting.ClockTime = savedLighting.ClockTime
+		Lighting.FogEnd = savedLighting.FogEnd
+		Lighting.FogStart = savedLighting.FogStart
+		Lighting.ColorShift_Bottom = savedLighting.ColorShift_Bottom
+		Lighting.ColorShift_Top = savedLighting.ColorShift_Top
+		Lighting.GlobalShadows = savedLighting.GlobalShadows
+	end)
+	savedLighting = nil
+end
+
+local function setFullBright(state: boolean)
+	fullBrightEnabled = state
+	if state then
+		applyFullBright()
+		if not fullBrightLoopConn then
+			fullBrightLoopConn = RunService.RenderStepped:Connect(function()
+				if fullBrightEnabled then
+					applyFullBright()
+				end
+			end)
+		end
+	else
+		if fullBrightLoopConn then
+			fullBrightLoopConn:Disconnect()
+			fullBrightLoopConn = nil
+		end
+		restoreLighting()
+	end
 end
 
 -- =========================
@@ -1734,10 +1812,23 @@ UserInputService.InputBegan:Connect(function(input, gp)
 	if not newBind then return end
 
 	if waitingFor == "ESP" then espBind = newBind end
-	if waitingFor == "AIM" then aimBind = newBind end
-	if waitingFor == "NOCLIP" then noclipBind = newBind end
-	stopRebind()
+if waitingFor == "AIM" then aimBind = newBind end
+if waitingFor == "NOCLIP" then noclipBind = newBind end
+stopRebind()
 end)
+
+-- =========================
+-- VISUAL
+-- =========================
+sectionHeader(pageMain, "VISUAL", 520)
+
+local fullBrightCtl
+fullBrightCtl = createIosSwitchRow(pageMain, 540, "Full Bright", function()
+	setFullBright(not fullBrightEnabled)
+	fullBrightCtl.setOn(fullBrightEnabled)
+	pulseUI()
+end)
+fullBrightCtl.setOn(fullBrightEnabled, true)
 
 -- =========================
 -- JOB ID
