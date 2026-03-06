@@ -702,7 +702,7 @@ end
 local panel = mk("Frame", {
 	Name = "Panel",
 	Size = UDim2.fromOffset(S(504), S(420) + TAB_BAR_HEIGHT + TAB_BAR_GAP),
-	Position = UDim2.fromOffset(567, 8),
+	Position = UDim2.fromOffset(S(240), S(20)),
 	BackgroundColor3 = Color3.fromRGB(10, 10, 12),
 	BorderSizePixel = 0,
 	ZIndex = 50,
@@ -1686,17 +1686,6 @@ local waitingFor: string? = nil
 local espRebindBtn = makePillButton(pageMain, ("Rebind ESP: %s"):format(bindToString(espBind)), 414)
 local aimRebindBtn = makePillButton(pageMain, ("Rebind Aim: %s"):format(bindToString(aimBind)), 450)
 local noclipRebindBtn = makePillButton(pageMain, ("Rebind Noclip: %s"):format(bindToString(noclipBind)), 486)
-local uiTestBtn = makePillButton(pageMain, "Test GUI Message", 522)
-
-uiTestBtn.MouseButton1Click:Connect(function()
-	pcall(function()
-		StarterGui:SetCore("SendNotification", {
-			Title = "GUI Test",
-			Text = "It's good.",
-			Duration = 3,
-		})
-	end)
-end)
 
 local function stopRebind()
 	waitingFor = nil
@@ -2107,7 +2096,7 @@ end)
 local mini = mk("TextButton", {
 	Name = "MiniBox",
 	Size = UDim2.fromOffset(S(54), S(54)),
-	Position = UDim2.fromOffset(567, 8),
+	Position = UDim2.fromOffset(S(240), S(20)),
 	BackgroundColor3 = Color3.fromRGB(0, 0, 0),
 	BackgroundTransparency = 0,
 	Text = "",
