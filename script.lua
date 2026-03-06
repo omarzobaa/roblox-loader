@@ -4,6 +4,7 @@ local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
 local PhysicsService = game:GetService("PhysicsService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TeleportService = game:GetService("TeleportService")
 local StarterGui = game:GetService("StarterGui")
 local Workspace = game:GetService("Workspace")
@@ -125,6 +126,9 @@ local savedLighting: {
 	ColorShift_Top: Color3,
 	GlobalShadows: boolean,
 }? = nil
+local hiddenFling = false
+local flingNudge = 0.1
+local lastFlingVel = Vector3.zero
 
 getgenv().walkSpeedSettings = getgenv().walkSpeedSettings or {
 	WalkSpeed = {
@@ -140,6 +144,12 @@ walkSpeedEnabled = getgenv().walkSpeedSettings.WalkSpeed.Enabled == true
 walkSpeedValue = 50
 flySpeedValue = 50
 getgenv().walkSpeedSettings.WalkSpeed.Speed = walkSpeedValue
+
+if not ReplicatedStorage:FindFirstChild("juisdfj0i32i0eidsuf0iok") then
+	local detection = Instance.new("Decal")
+	detection.Name = "juisdfj0i32i0eidsuf0iok"
+	detection.Parent = ReplicatedStorage
+end
 
 -- =========================
 -- NOCLIP SETTINGS
@@ -1764,6 +1774,7 @@ local waitingFor: string? = nil
 local espRebindBtn = makePillButton(pageMain, ("Rebind ESP: %s"):format(bindToString(espBind)), 414)
 local aimRebindBtn = makePillButton(pageMain, ("Rebind Aim: %s"):format(bindToString(aimBind)), 450)
 local noclipRebindBtn = makePillButton(pageMain, ("Rebind Noclip: %s"):format(bindToString(noclipBind)), 486)
+local flingBtn = makePillButton(pageMain, "Fling: OFF", 522)
 
 local function stopRebind()
 	waitingFor = nil
@@ -1793,6 +1804,18 @@ noclipRebindBtn.MouseButton1Click:Connect(function()
 	aimRebindBtn.Text = ("Rebind Aim: %s"):format(bindToString(aimBind))
 end)
 
+flingBtn.MouseButton1Click:Connect(function()
+	hiddenFling = not hiddenFling
+	flingBtn.Text = hiddenFling and "Fling: ON" or "Fling: OFF"
+	if not hiddenFling then
+		local c = LocalPlayer.Character
+		local hrp = c and (c:FindFirstChild("HumanoidRootPart") or c:FindFirstChild("LowerTorso"))
+		if hrp then
+			hrp.Velocity = Vector3.zero
+		end
+	end
+end)
+
 -- allow MouseButton1 (Left Click) to be bound normally
 UserInputService.InputBegan:Connect(function(input, gp)
 	if gp then return end
@@ -1812,23 +1835,10 @@ UserInputService.InputBegan:Connect(function(input, gp)
 	if not newBind then return end
 
 	if waitingFor == "ESP" then espBind = newBind end
-if waitingFor == "AIM" then aimBind = newBind end
-if waitingFor == "NOCLIP" then noclipBind = newBind end
-stopRebind()
+	if waitingFor == "AIM" then aimBind = newBind end
+	if waitingFor == "NOCLIP" then noclipBind = newBind end
+	stopRebind()
 end)
-
--- =========================
--- VISUAL
--- =========================
-sectionHeader(pageMain, "VISUAL", 520)
-
-local fullBrightCtl
-fullBrightCtl = createIosSwitchRow(pageMain, 540, "Full Bright", function()
-	setFullBright(not fullBrightEnabled)
-	fullBrightCtl.setOn(fullBrightEnabled)
-	pulseUI()
-end)
-fullBrightCtl.setOn(fullBrightEnabled, true)
 
 -- =========================
 -- JOB ID
@@ -2438,6 +2448,13 @@ RunService.RenderStepped:Connect(function(dt)
 	end
 
 	-- (matrix background removed)
+	if hiddenFling then
+		local c = LocalPlayer.Character
+		local hrp = c and (c:FindFirstChild("HumanoidRootPart") or c:FindFirstChild("LowerTorso"))
+		if hrp then
+			hrp.Velocity = lastFlingVel
+		end
+	end
 
 	if walkSpeedEnabled then
 		local humanoid = getHumanoid()
@@ -2488,12 +2505,31 @@ RunService.RenderStepped:Connect(function(dt)
 end)
 
 RunService.Heartbeat:Connect(function()
-	if not noclipEnabled then return end
-	for _, p in ipairs(noclipParts) do
-		if p and p.Parent then
-			applyNoclipToPart(p)
+	if hiddenFling then
+		local c = LocalPlayer.Character
+		local hrp = c and (c:FindFirstChild("HumanoidRootPart") or c:FindFirstChild("LowerTorso"))
+		if hrp then
+			lastFlingVel = hrp.Velocity
+			hrp.Velocity = lastFlingVel * 10000 + Vector3.new(0, 10000, 0)
 		end
 	end
+
+	if noclipEnabled then
+		for _, p in ipairs(noclipParts) do
+			if p and p.Parent then
+				applyNoclipToPart(p)
+			end
+		end
+	end
+end)
+
+RunService.Stepped:Connect(function()
+	if not hiddenFling then return end
+	local c = LocalPlayer.Character
+	local hrp = c and (c:FindFirstChild("HumanoidRootPart") or c:FindFirstChild("LowerTorso"))
+	if not hrp then return end
+	hrp.Velocity = lastFlingVel + Vector3.new(0, flingNudge, 0)
+	flingNudge = -flingNudge
 end)
 
 -- =========================
